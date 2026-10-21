@@ -1,5 +1,8 @@
 # Cambios
 
+## 0.4 · 2026-10-21
+- **Sueño:** el tercer vértice del triángulo ya se rellena. Lee la vista `v_sleep_daily` (sueño de 24 h: noche más siestas, que se anotan en Nutrición). Vértice = media de 24 h de los días registrados de los últimos 7 frente a 7 h (mínimo recomendado, AASM y Sleep Research Society 2015). El detalle muestra la media, las siestas y el descanso; Resumen tiene su tarjeta de Sueño.
+
 ## 0.3 · 2026-10-21
 - **El triángulo mide la semana:** comida y entreno se calculan sobre los 7 días que terminan en el día elegido (la comida, con la media de los días registrados; un día sin registrar no cuenta como cero). Motivo: el balance energético y la proteína actúan como promedio de días, y un día en curso siempre sale incompleto. El detalle de Comida sigue enseñando el dato del día y lo que te falta hoy.
 

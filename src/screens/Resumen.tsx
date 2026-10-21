@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { toISODate } from '../lib/date'
-import { bodySummary, caffeineSummary, crossTrainingRest, lastDays, nutritionSummary, trainingSummary, CROSS_MIN_DAYS } from '../lib/summary'
+import { sleepSummary, bodySummary, caffeineSummary, crossTrainingRest, lastDays, nutritionSummary, trainingSummary, CROSS_MIN_DAYS } from '../lib/summary'
 import type { VerticeData } from '../lib/useVerticeData'
 
 const fmt = (n: number, d = 0) => n.toFixed(d).replace('.', ',')
+const hoursText = (min: number) => `${Math.floor(min / 60)} h ${String(Math.round(min % 60)).padStart(2, '0')} min`
 const sign = (n: number, d = 0) => (n > 0 ? '+' : '') + fmt(n, d)
 
 /** Resumen de la semana o de 4 semanas: comida, cuerpo, entreno, el cruce entre entreno y descanso, y la cafeína. */
@@ -16,6 +17,7 @@ export default function Resumen({ data }: { data: VerticeData }) {
   const trn = useMemo(() => trainingSummary(days, data.training), [days, data])
   const body = useMemo(() => bodySummary(today, data.body), [today, data])
   const cross = useMemo(() => crossTrainingRest(days, data.nutrition, data.training), [days, data])
+  const slp = useMemo(() => sleepSummary(days, data.sleep), [days, data])
   const caf = useMemo(() => caffeineSummary(days, data.caffeine), [days, data])
 
   return (
@@ -74,6 +76,18 @@ export default function Resumen({ data }: { data: VerticeData }) {
           </>
         ) : (
           <p className="muted">Hacen falta al menos {CROSS_MIN_DAYS} días registrados de entreno y {CROSS_MIN_DAYS} de descanso para comparar (ahora: {cross.trainingDays} y {cross.restDays}).</p>
+        )}
+      </section>
+
+      <section className="card">
+        <h3>Sueño</h3>
+        {slp.avgMin != null ? (
+          <>
+            <p>Media de <strong>{hoursText(slp.avgMin)}</strong> en 24 h ({slp.days} de {days.length} días registrados){slp.avgNapMin ? <> · siestas: {hoursText(slp.avgNapMin)} de media</> : null}</p>
+            <p className="muted">{slp.avgMin < 7 * 60 ? 'Por debajo de las 7 h recomendadas para adultos.' : 'En el rango recomendado (7-9 h).'}{slp.avgQuality != null ? ` Descanso medio: ${fmt(slp.avgQuality, 1)}/5.` : ''}</p>
+          </>
+        ) : (
+          <p className="muted">Sin sueño registrado en este periodo. Se anota en Nutrición, en Mi día.</p>
         )}
       </section>
 

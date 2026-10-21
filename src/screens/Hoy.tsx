@@ -5,6 +5,7 @@ import type { VerticeData } from '../lib/useVerticeData'
 import Triangulo, { type Pillar } from './Triangulo'
 
 const fmt = (n: number, d = 0) => n.toFixed(d).replace('.', ',')
+const hours = (min: number) => `${Math.floor(min / 60)} h ${String(Math.round(min % 60)).padStart(2, '0')} min`
 const LETTERS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 const dayName = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' })
 
@@ -12,7 +13,7 @@ function Detail({ pillar, date, today, data }: { pillar: Pillar; date: string; t
   const n = data.nutrition.find((x) => x.date === date)
   const t = data.training.find((x) => x.date === date)
   const c = data.caffeine.find((x) => x.date === date)
-  const sc = dayScores(date, data.nutrition, data.training, data.targets)
+  const sc = dayScores(date, data.nutrition, data.training, data.targets, data.sleep)
   const kcalT = data.targets?.kcal_target ?? 0
   const protT = data.targets?.protein_target ?? 0
   if (pillar === 'comida') {
@@ -35,9 +36,12 @@ function Detail({ pillar, date, today, data }: { pillar: Pillar; date: string; t
       </div>
     )
   }
+  const sl = data.sleep.find((x) => x.date === date)
   return (
     <div className="detail">
-      <strong>Sueño</strong> · todavía no se registra. Cuando lo añadamos, aquí saldrá lo que dormiste y se cruzará con la comida y el entreno.
+      <strong>Sueño · últimos 7 días</strong> · {sc.avgSleepMin != null ? <>media de {hours(sc.avgSleepMin)} en 24 h ({sc.sleepDays} de 7 días registrados; mínimo recomendado 7 h){sc.avgNapMin ? <>, siestas incluidas: {hours(sc.avgNapMin)} de media</> : null}{sc.avgQuality != null ? <> · descanso {fmt(sc.avgQuality, 1)}/5</> : null}</> : 'todavía no hay sueño registrado. Anótalo en Nutrición, en Mi día.'}
+      {sl && <><br />{date === today ? 'Hoy' : 'Ese día'}: {hours(sl.minutes)}{sl.nap_minutes > 0 && sl.night_minutes > 0 ? ` (noche ${hours(sl.night_minutes)} + siestas ${hours(sl.nap_minutes)})` : sl.nap_minutes > 0 ? ' (siesta)' : ''}</>}
+      <br /><a className="applink" href="/nutricion/">Anotar sueño en Nutrición</a>
     </div>
   )
 }
@@ -48,7 +52,7 @@ export default function Hoy({ data }: { data: VerticeData }) {
   const [date, setDate] = useState(today)
   const [pillar, setPillar] = useState<Pillar>('comida')
   const week = useMemo(() => lastDays(today, 7), [today])
-  const scores = useMemo(() => dayScores(date, data.nutrition, data.training, data.targets), [date, data])
+  const scores = useMemo(() => dayScores(date, data.nutrition, data.training, data.targets, data.sleep), [date, data])
   const lastWeight = [...data.body].filter((x) => x.kg != null).sort((a, b) => b.date.localeCompare(a.date))[0]
   const lastWaist = [...data.body].filter((x) => x.waist_cm != null).sort((a, b) => b.date.localeCompare(a.date))[0]
 

@@ -2,6 +2,7 @@ export interface NutritionDay { date: string; kcal: number; protein: number; car
 export interface TrainingDay { date: string; sessions_done: number; cardio_minutes: number }
 export interface CaffeineDay { date: string; caffeine_mg: number }
 export interface BodyDay { date: string; kg: number | null; waist_cm: number | null }
+export interface SleepDay { date: string; minutes: number; night_minutes: number; nap_minutes: number; quality: number | null }
 export interface Targets { kcal_target: number; protein_target: number }
 
 /** Suma días a una fecha ISO (AAAA-MM-DD). */
@@ -141,6 +142,9 @@ export function crossTrainingRest(days: string[], nutrition: NutritionDay[], tra
 /** Días de entreno a la semana que se toman como "completo" en el triángulo (no es una meta tuya: es una referencia sencilla). */
 export const WEEKLY_TRAINING_REF = 3
 
+/** Minutos de sueño de las 24 h que se toman como "completo" (7 h, el mínimo recomendado para adultos: AASM y Sleep Research Society, 2015). */
+export const SLEEP_REF_MIN = 7 * 60
+
 /** 0-1: acercarse a la proteína y a las calorías de la meta sin pasarse (más de un 5 % de calorías resta). */
 export function foodScore(kcal: number, protein: number, targets: Targets): number {
   const p = Math.min(1, protein / targets.protein_target)
@@ -160,12 +164,16 @@ export interface DayScores {
   /** 0-1: días de entreno de esos 7 días frente a la referencia */
   training: number
   trainingDays: number
-  /** el sueño todavía no se registra */
+  /** 0-1: media de sueño (noche + siestas) de los días registrados de esos 7, frente a 7 h; null si no hay ninguno */
   sleep: number | null
+  sleepDays: number
+  avgSleepMin: number | null
+  avgNapMin: number | null
+  avgQuality: number | null
 }
 
 /** Valor de 0 a 1 para los tres vértices: comida y entreno sobre la semana que termina en `date`. */
-export function dayScores(date: string, nutrition: NutritionDay[], training: TrainingDay[], targets: Targets | null): DayScores {
+export function dayScores(date: string, nutrition: NutritionDay[], training: TrainingDay[], targets: Targets | null, sleep: SleepDay[] = []): DayScores {
   const week = lastDays(date, 7)
   const nMap = byDate(nutrition)
   const logged = week.map((d) => nMap.get(d)).filter((x): x is NutritionDay => !!x && x.kcal > 0)
@@ -175,5 +183,27 @@ export function dayScores(date: string, nutrition: NutritionDay[], training: Tra
   const food = !valid ? null : avgKcal == null || avgProtein == null ? 0 : foodScore(avgKcal, avgProtein, targets)
   const t = byDate(training)
   const trainingDays = week.filter((d) => isTrainingDay(t.get(d))).length
-  return { food, loggedDays: logged.length, avgKcal, avgProtein, training: Math.min(1, trainingDays / WEEKLY_TRAINING_REF), trainingDays, sleep: null }
+  const slept = week.map((d) => byDate(sleep).get(d)).filter((x): x is SleepDay => !!x && x.minutes > 0)
+  const avgSleepMin = mean(slept.map((x) => x.minutes))
+  const qualities = slept.map((x) => x.quality).filter((q): q is number => q != null)
+  return {
+    food, loggedDays: logged.length, avgKcal, avgProtein,
+    training: Math.min(1, trainingDays / WEEKLY_TRAINING_REF), trainingDays,
+    sleep: avgSleepMin == null ? null : Math.min(1, avgSleepMin / SLEEP_REF_MIN),
+    sleepDays: slept.length, avgSleepMin, avgNapMin: mean(slept.map((x) => x.nap_minutes)), avgQuality: mean(qualities),
+  }
+}
+
+export interface SleepSummary { days: number; avgMin: number | null; avgNapMin: number | null; avgQuality: number | null }
+
+/** Sueño medio de 24 h (noche + siestas) de los días registrados del periodo. */
+export function sleepSummary(days: string[], data: SleepDay[]): SleepSummary {
+  const map = byDate(data)
+  const rows = days.map((d) => map.get(d)).filter((x): x is SleepDay => !!x && x.minutes > 0)
+  return {
+    days: rows.length,
+    avgMin: mean(rows.map((r) => r.minutes)),
+    avgNapMin: mean(rows.map((r) => r.nap_minutes)),
+    avgQuality: mean(rows.map((r) => r.quality).filter((q): q is number => q != null)),
+  }
 }

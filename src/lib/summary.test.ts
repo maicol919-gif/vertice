@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, dayScores, WEEKLY_TRAINING_REF, bodySummary, caffeineSummary, crossTrainingRest, lastDays, nutritionSummary, trainingSummary, type NutritionDay, type TrainingDay } from './summary'
+import { sleepSummary, SLEEP_REF_MIN, addDays, dayScores, WEEKLY_TRAINING_REF, bodySummary, caffeineSummary, crossTrainingRest, lastDays, nutritionSummary, trainingSummary, type NutritionDay, type TrainingDay } from './summary'
 
 const nut = (date: string, kcal: number, protein: number, carbs = 200): NutritionDay => ({ date, kcal, protein, carbs, fat: 50 })
 const tr = (date: string, sessions_done: number, cardio_minutes = 0): TrainingDay => ({ date, sessions_done, cardio_minutes })
@@ -123,5 +123,32 @@ describe('dayScores', () => {
     const sc = dayScores('2026-10-21', [nut('2026-10-10', 2000, 150)], [], targets)
     expect(sc.loggedDays).toBe(0)
     expect(sc.food).toBe(0)
+  })
+})
+
+describe('sueño', () => {
+  const targets = { kcal_target: 2000, protein_target: 150 }
+  const z = (date: string, night: number, nap = 0, quality: number | null = null) => ({ date, minutes: night + nap, night_minutes: night, nap_minutes: nap, quality })
+
+  it('el vértice es la media de 24 h de los días registrados frente a 7 h, con tope en 1', () => {
+    const sc = dayScores('2026-10-21', [], [], targets, [z('2026-10-20', 360), z('2026-10-19', 420, 60)])
+    expect(sc.sleepDays).toBe(2)
+    expect(sc.avgSleepMin).toBe(420)
+    expect(sc.sleep).toBe(1)
+    expect(dayScores('2026-10-21', [], [], targets, [z('2026-10-20', 210)]).sleep).toBeCloseTo(0.5)
+  })
+
+  it('sin sueño registrado no hay lectura y fuera de la ventana no cuenta', () => {
+    expect(dayScores('2026-10-21', [], [], targets, []).sleep).toBeNull()
+    expect(dayScores('2026-10-21', [], [], targets, [z('2026-10-01', 480)]).sleepDays).toBe(0)
+    expect(SLEEP_REF_MIN).toBe(420)
+  })
+
+  it('resumen: media, siestas y descanso', () => {
+    const s = sleepSummary(['2026-10-19', '2026-10-20', '2026-10-21'], [z('2026-10-19', 400, 0, 3), z('2026-10-20', 380, 120, 5)])
+    expect(s.days).toBe(2)
+    expect(s.avgMin).toBe(450)
+    expect(s.avgNapMin).toBe(60)
+    expect(s.avgQuality).toBe(4)
   })
 })

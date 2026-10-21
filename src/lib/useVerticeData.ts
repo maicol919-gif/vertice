@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
-import { addDays, type BodyDay, type CaffeineDay, type NutritionDay, type Targets, type TrainingDay } from './summary'
+import { addDays, type BodyDay, type CaffeineDay, type NutritionDay, type SleepDay, type Targets, type TrainingDay } from './summary'
 import { toISODate } from './date'
 
 export interface VerticeData {
@@ -8,6 +8,7 @@ export interface VerticeData {
   training: TrainingDay[]
   caffeine: CaffeineDay[]
   body: BodyDay[]
+  sleep: SleepDay[]
   targets: Targets | null
 }
 
@@ -23,14 +24,15 @@ export function useVerticeData(): { data: VerticeData | null; error: string | nu
 
   const reload = useCallback(async () => {
     const since = addDays(toISODate(new Date()), -WINDOW_DAYS)
-    const [n, t, c, b, g] = await Promise.all([
+    const [n, t, c, b, g, z] = await Promise.all([
       supabase.from('v_nutrition_daily').select('*').gte('date', since),
       supabase.from('v_training_daily').select('*').gte('date', since),
       supabase.from('v_caffeine_daily').select('*').gte('date', since),
       supabase.from('v_body_daily').select('*').gte('date', since),
       supabase.from('v_targets').select('*').limit(1),
+    supabase.from('v_sleep_daily').select('*').gte('date', since),
     ])
-    const failed = [n, t, c, b, g].find((r) => r.error)
+    const failed = [n, t, c, b, g, z].find((r) => r.error)
     if (failed?.error) return setError(failed.error.message)
     setError(null)
     setData({
@@ -38,6 +40,7 @@ export function useVerticeData(): { data: VerticeData | null; error: string | nu
       training: (t.data ?? []).map((r) => ({ date: r.date, sessions_done: num(r.sessions_done), cardio_minutes: num(r.cardio_minutes) })),
       caffeine: (c.data ?? []).map((r) => ({ date: r.date, caffeine_mg: num(r.caffeine_mg) })),
       body: (b.data ?? []).map((r) => ({ date: r.date, kg: r.kg == null ? null : Number(r.kg), waist_cm: r.waist_cm == null ? null : Number(r.waist_cm) })),
+      sleep: (z.data ?? []).map((r) => ({ date: r.date, minutes: num(r.minutes), night_minutes: num(r.night_minutes), nap_minutes: num(r.nap_minutes), quality: r.quality == null ? null : Number(r.quality) })),
       targets: g.data?.[0] ? { kcal_target: num(g.data[0].kcal_target), protein_target: num(g.data[0].protein_target) } : null,
     })
   }, [])
