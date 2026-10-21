@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, bodySummary, caffeineSummary, crossTrainingRest, lastDays, nutritionSummary, trainingSummary, type NutritionDay, type TrainingDay } from './summary'
+import { addDays, dayScores, WEEKLY_TRAINING_REF, bodySummary, caffeineSummary, crossTrainingRest, lastDays, nutritionSummary, trainingSummary, type NutritionDay, type TrainingDay } from './summary'
 
 const nut = (date: string, kcal: number, protein: number, carbs = 200): NutritionDay => ({ date, kcal, protein, carbs, fat: 50 })
 const tr = (date: string, sessions_done: number, cardio_minutes = 0): TrainingDay => ({ date, sessions_done, cardio_minutes })
@@ -82,5 +82,31 @@ describe('cruce entreno y descanso', () => {
   it('con pocos días de un tipo no concluye nada', () => {
     const c = crossTrainingRest(days, nutrition.slice(0, 5), training)
     expect(c.reading).toEqual([])
+  })
+})
+
+describe('dayScores', () => {
+  const targets = { kcal_target: 2000, protein_target: 150 }
+  const train = (date: string): TrainingDay => ({ date, sessions_done: 1, cardio_minutes: 0 })
+
+  it('comida completa = 1; la mitad de proteína y de calorías = 0,5', () => {
+    expect(dayScores('2026-10-21', [nut('2026-10-21', 2000, 150)], [], targets).food).toBe(1)
+    expect(dayScores('2026-10-21', [nut('2026-10-21', 1000, 75)], [], targets).food).toBe(0.5)
+  })
+
+  it('pasarse de calorías resta, y sin metas o sin comida no hay lectura rota', () => {
+    const over = dayScores('2026-10-21', [nut('2026-10-21', 3000, 150)], [], targets).food ?? 0
+    expect(over).toBeLessThan(0.8)
+    expect(dayScores('2026-10-21', [], [], targets).food).toBe(0)
+    expect(dayScores('2026-10-21', [], [], null).food).toBeNull()
+  })
+
+  it('entreno: días de los últimos 7 frente a la referencia, con tope en 1; el sueño aún no existe', () => {
+    const days = ['2026-10-16', '2026-10-18', '2026-10-20', '2026-10-21'].map(train)
+    const s = dayScores('2026-10-21', [], days, targets)
+    expect(s.trainingDays).toBe(4)
+    expect(s.training).toBe(1)
+    expect(dayScores('2026-10-21', [], [train('2026-10-21')], targets).training).toBeCloseTo(1 / WEEKLY_TRAINING_REF)
+    expect(s.sleep).toBeNull()
   })
 })

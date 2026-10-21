@@ -137,3 +137,32 @@ export function crossTrainingRest(days: string[], nutrition: NutritionDay[], tra
   else out.reading.push(`Los días de entreno comes ${Math.round(dc)} g más de carbohidratos.`)
   return out
 }
+
+/** Días de entreno a la semana que se toman como "completo" en el triángulo (no es una meta tuya: es una referencia sencilla). */
+export const WEEKLY_TRAINING_REF = 3
+
+export interface DayScores {
+  /** 0-1: acercarse a la proteína y a las calorías de la meta sin pasarse; null si no hay metas */
+  food: number | null
+  /** 0-1: días de entreno de los 7 que terminan ese día, frente a la referencia */
+  training: number
+  trainingDays: number
+  /** el sueño todavía no se registra */
+  sleep: number | null
+}
+
+/** Valor de 0 a 1 para los tres vértices de un día. */
+export function dayScores(date: string, nutrition: NutritionDay[], training: TrainingDay[], targets: Targets | null): DayScores {
+  const n = byDate(nutrition).get(date)
+  let food: number | null = null
+  if (targets && targets.kcal_target > 0 && targets.protein_target > 0) {
+    const kcal = n?.kcal ?? 0
+    const protein = Math.min(1, (n?.protein ?? 0) / targets.protein_target)
+    const over = kcal - targets.kcal_target * 1.05
+    const energy = over > 0 ? Math.max(0, 1 - over / targets.kcal_target) : Math.min(1, kcal / targets.kcal_target)
+    food = (protein + energy) / 2
+  }
+  const t = byDate(training)
+  const trainingDays = lastDays(date, 7).filter((d) => isTrainingDay(t.get(d))).length
+  return { food, training: Math.min(1, trainingDays / WEEKLY_TRAINING_REF), trainingDays, sleep: null }
+}

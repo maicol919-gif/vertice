@@ -18,20 +18,22 @@ const data: VerticeData = {
 }
 
 describe('pantallas (render)', () => {
-  it('Hoy enseña comida, entreno, cafeína y cuerpo', () => {
+  it('Hoy enseña el triángulo, el detalle de comida, la semana y el cuerpo', () => {
     const html = renderToString(<Hoy data={data} />)
-    expect(html).toContain('Hoy')
-    expect(html).toContain('Te faltan 58 g de proteína')
-    expect(html).toContain('1 sesión de fuerza')
-    expect(html).toContain('20 min de cardio')
-    expect(html).toContain('90 mg hoy')
+    expect(html).toContain('Triángulo de los tres pilares')
+    expect(html).toContain('Comida')
+    expect(html).toContain('Entreno')
+    expect(html).toContain('Sueño')
+    expect(html).toMatch(/Te faltan (<!-- -->)?58(<!-- -->)? g de proteína/)
+    expect(html).toMatch(/Cafeína: (<!-- -->)?90(<!-- -->)? mg/)
+    expect(html).toContain('Semana')
     expect(html).toContain('72,4 kg')
   })
 
   it('Hoy sin datos no se rompe', () => {
     const html = renderToString(<Hoy data={{ nutrition: [], training: [], caffeine: [], body: [], targets: null }} />)
     expect(html).toContain('No encuentro tus metas')
-    expect(html).toContain('Sin cafeína registrada hoy')
+    expect(html).toContain('sin comidas registradas')
   })
 
   it('Resumen enseña los bloques y avisa de que faltan días para el cruce', () => {
