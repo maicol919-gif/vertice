@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { toISODate } from '../lib/date'
-import { dayScores, isTrainingDay, lastDays, WEEKLY_TRAINING_REF } from '../lib/summary'
+import { dayScores, foodScore, isTrainingDay, lastDays, WEEKLY_TRAINING_REF } from '../lib/summary'
 import type { VerticeData } from '../lib/useVerticeData'
 import Triangulo, { type Pillar } from './Triangulo'
 
@@ -18,7 +18,8 @@ function Detail({ pillar, date, today, data }: { pillar: Pillar; date: string; t
   if (pillar === 'comida') {
     return (
       <div className="detail">
-        <strong>Comida</strong> · {n && n.kcal > 0 ? <>{fmt(n.kcal)} de {fmt(kcalT)} kcal · proteína {fmt(n.protein)} de {fmt(protT)} g · carbohidratos {fmt(n.carbs)} g</> : 'sin comidas registradas.'}
+        <strong>Comida · últimos 7 días</strong> · {sc.avgKcal != null && sc.avgProtein != null ? <>media de {fmt(sc.avgKcal)} de {fmt(kcalT)} kcal y {fmt(sc.avgProtein)} de {fmt(protT)} g de proteína ({sc.loggedDays} de 7 días registrados)</> : 'sin comidas registradas.'}
+        <br />{date === today ? 'Hoy' : 'Ese día'}: {n && n.kcal > 0 ? <>{fmt(n.kcal)} kcal · proteína {fmt(n.protein)} g · carbohidratos {fmt(n.carbs)} g</> : 'sin comidas registradas.'}
         {n && n.kcal > 0 && date === today && <><br /><span className="muted">Te faltan {fmt(Math.max(0, protT - n.protein))} g de proteína y te quedan {fmt(Math.max(0, kcalT - n.kcal))} kcal.</span></>}
         {c && c.caffeine_mg > 0 && <><br /><span className={c.caffeine_mg > 400 ? 'warn-text' : 'muted'}>Cafeína: {fmt(c.caffeine_mg)} mg (límite orientativo 400).</span></>}
         <br /><a className="applink" href="/nutricion/">Abrir Nutrición</a>
@@ -65,10 +66,11 @@ export default function Hoy({ data }: { data: VerticeData }) {
       <h3>Semana</h3>
       <div className="week">
         {week.map((d) => {
-          const sc = dayScores(d, data.nutrition, data.training, data.targets)
           const t = data.training.find((x) => x.date === d)
           const logged = (data.nutrition.find((x) => x.date === d)?.kcal ?? 0) > 0
-          const bg = !logged || sc.food == null ? undefined : sc.food >= 0.85 ? '#5ee08a' : sc.food >= 0.5 ? '#9bbf6a' : '#6b7280'
+          const n = data.nutrition.find((x) => x.date === d)
+          const f = logged && n && data.targets ? foodScore(n.kcal, n.protein, data.targets) : null
+          const bg = f == null ? undefined : f >= 0.85 ? '#5ee08a' : f >= 0.5 ? '#9bbf6a' : '#6b7280'
           return (
             <button key={d} className={d === date ? 'sel' : ''} onClick={() => setDate(d)} aria-label={dayName(d)}>
               <div className="cell" style={bg ? { background: bg } : undefined} />

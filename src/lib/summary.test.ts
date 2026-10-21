@@ -109,4 +109,19 @@ describe('dayScores', () => {
     expect(dayScores('2026-10-21', [], [train('2026-10-21')], targets).training).toBeCloseTo(1 / WEEKLY_TRAINING_REF)
     expect(s.sleep).toBeNull()
   })
+
+  it('comida se mide con la media de los 7 días registrados; los días sin registrar no cuentan como cero', () => {
+    const rows = [nut('2026-10-19', 2000, 150), nut('2026-10-20', 1000, 75)]
+    const sc = dayScores('2026-10-21', rows, [], targets)
+    expect(sc.loggedDays).toBe(2)
+    expect(sc.avgKcal).toBe(1500)
+    expect(sc.avgProtein).toBe(112.5)
+    expect(sc.food).toBeCloseTo(0.75)
+  })
+
+  it('un día fuera de la ventana de 7 no cuenta', () => {
+    const sc = dayScores('2026-10-21', [nut('2026-10-10', 2000, 150)], [], targets)
+    expect(sc.loggedDays).toBe(0)
+    expect(sc.food).toBe(0)
+  })
 })
