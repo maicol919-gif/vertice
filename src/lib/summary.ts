@@ -2,7 +2,8 @@ export interface NutritionDay { date: string; kcal: number; protein: number; car
 export interface TrainingDay { date: string; sessions_done: number; cardio_minutes: number }
 export interface CaffeineDay { date: string; caffeine_mg: number }
 export interface BodyDay { date: string; kg: number | null; waist_cm: number | null }
-export interface SleepDay { date: string; minutes: number; night_minutes: number; nap_minutes: number; quality: number | null }
+export type WakeReason = 'solo' | 'despertador' | 'ruido'
+export interface SleepDay { date: string; minutes: number; night_minutes: number; nap_minutes: number; quality: number | null; wake_reason?: WakeReason | null }
 export interface Targets { kcal_target: number; protein_target: number }
 
 /** Suma días a una fecha ISO (AAAA-MM-DD). */
@@ -192,6 +193,15 @@ export function dayScores(date: string, nutrition: NutritionDay[], training: Tra
     sleep: avgSleepMin == null ? null : Math.min(1, avgSleepMin / SLEEP_REF_MIN),
     sleepDays: slept.length, avgSleepMin, avgNapMin: mean(slept.map((x) => x.nap_minutes)), avgQuality: mean(qualities),
   }
+}
+
+export interface WakeCounts { logged: number; solo: number; despertador: number; ruido: number }
+
+/** Cuántas de las noches anotadas terminaron por tu cuenta, con despertador o por un ruido. */
+export function wakeCounts(days: string[], data: SleepDay[]): WakeCounts {
+  const map = byDate(data)
+  const reasons = days.map((d) => map.get(d)?.wake_reason).filter((r): r is WakeReason => !!r)
+  return { logged: reasons.length, solo: reasons.filter((r) => r === 'solo').length, despertador: reasons.filter((r) => r === 'despertador').length, ruido: reasons.filter((r) => r === 'ruido').length }
 }
 
 export interface SleepSummary { days: number; avgMin: number | null; avgNapMin: number | null; avgQuality: number | null }

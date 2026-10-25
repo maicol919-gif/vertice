@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { toISODate } from '../lib/date'
-import { dayScores, foodScore, isTrainingDay, lastDays, WEEKLY_TRAINING_REF } from '../lib/summary'
+import { dayScores, foodScore, isTrainingDay, lastDays, wakeCounts, WEEKLY_TRAINING_REF, type WakeReason } from '../lib/summary'
 import type { VerticeData } from '../lib/useVerticeData'
 import Triangulo, { type Pillar } from './Triangulo'
 
 const fmt = (n: number, d = 0) => n.toFixed(d).replace('.', ',')
 const hours = (min: number) => `${Math.floor(min / 60)} h ${String(Math.round(min % 60)).padStart(2, '0')} min`
-const LETTERS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
+const WAKE_TEXT: Record<WakeReason, string> = { solo: 'te despertaste por tu cuenta', despertador: 'te despertó el despertador', ruido: 'te despertó un ruido' }
+const LETTERS =['D', 'L', 'M', 'X', 'J', 'V', 'S']
 const dayName = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' })
 
 function Detail({ pillar, date, today, data }: { pillar: Pillar; date: string; today: string; data: VerticeData }) {
@@ -37,10 +38,12 @@ function Detail({ pillar, date, today, data }: { pillar: Pillar; date: string; t
     )
   }
   const sl = data.sleep.find((x) => x.date === date)
+  const wake = wakeCounts(lastDays(date, 7), data.sleep)
   return (
     <div className="detail">
       <strong>Sueño · últimos 7 días</strong> · {sc.avgSleepMin != null ? <>media de {hours(sc.avgSleepMin)} en 24 h ({sc.sleepDays} de 7 días registrados; mínimo recomendado 7 h){sc.avgNapMin ? <>, siestas incluidas: {hours(sc.avgNapMin)} de media</> : null}{sc.avgQuality != null ? <> · descanso {fmt(sc.avgQuality, 1)}/5</> : null}</> : 'todavía no hay sueño registrado. Anótalo en Nutrición, en Mi día.'}
-      {sl && <><br />{date === today ? 'Hoy' : 'Ese día'}: {hours(sl.minutes)}{sl.nap_minutes > 0 && sl.night_minutes > 0 ? ` (noche ${hours(sl.night_minutes)} + siestas ${hours(sl.nap_minutes)})` : sl.nap_minutes > 0 ? ' (siesta)' : ''}</>}
+      {sl && <><br />{date === today ? 'Hoy' : 'Ese día'}: {hours(sl.minutes)}{sl.nap_minutes > 0 && sl.night_minutes > 0 ? ` (noche ${hours(sl.night_minutes)} + siestas ${hours(sl.nap_minutes)})` : sl.nap_minutes > 0 ? ' (siesta)' : ''}{sl.wake_reason ? ` · ${WAKE_TEXT[sl.wake_reason]}` : ''}</>}
+      {wake.logged > 0 && <><br /><span className="muted">Despertar de las últimas noches: {wake.solo} por tu cuenta, {wake.despertador} con despertador, {wake.ruido} por ruido (de {wake.logged} anotadas).</span></>}
       <br /><a className="applink" href="/nutricion/">Anotar sueño en Nutrición</a>
     </div>
   )

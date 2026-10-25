@@ -1,5 +1,8 @@
 # Cambios
 
+## 0.5 · 2026-10-25
+- **Cómo te despertaste:** la vista `v_sleep_daily` trae `wake_reason` (por tu cuenta, despertador o ruido, anotado en Nutrición). El detalle de Sueño muestra el despertar del día y cuántas noches de la semana fueron de cada tipo; Resumen lo cuenta en su tarjeta. No cambia el valor del vértice: la evidencia sobre este dato es indirecta.
+
 ## 0.4 · 2026-10-21
 - **Sueño:** el tercer vértice del triángulo ya se rellena. Lee la vista `v_sleep_daily` (sueño de 24 h: noche más siestas, que se anotan en Nutrición). Vértice = media de 24 h de los días registrados de los últimos 7 frente a 7 h (mínimo recomendado, AASM y Sleep Research Society 2015). El detalle muestra la media, las siestas y el descanso; Resumen tiene su tarjeta de Sueño.
 

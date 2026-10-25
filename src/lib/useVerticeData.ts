@@ -40,7 +40,7 @@ export function useVerticeData(): { data: VerticeData | null; error: string | nu
       training: (t.data ?? []).map((r) => ({ date: r.date, sessions_done: num(r.sessions_done), cardio_minutes: num(r.cardio_minutes) })),
       caffeine: (c.data ?? []).map((r) => ({ date: r.date, caffeine_mg: num(r.caffeine_mg) })),
       body: (b.data ?? []).map((r) => ({ date: r.date, kg: r.kg == null ? null : Number(r.kg), waist_cm: r.waist_cm == null ? null : Number(r.waist_cm) })),
-      sleep: (z.data ?? []).map((r) => ({ date: r.date, minutes: num(r.minutes), night_minutes: num(r.night_minutes), nap_minutes: num(r.nap_minutes), quality: r.quality == null ? null : Number(r.quality) })),
+      sleep: (z.data ?? []).map((r) => ({ date: r.date, minutes: num(r.minutes), night_minutes: num(r.night_minutes), nap_minutes: num(r.nap_minutes), quality: r.quality == null ? null : Number(r.quality), wake_reason: r.wake_reason ?? null })),
       targets: g.data?.[0] ? { kcal_target: num(g.data[0].kcal_target), protein_target: num(g.data[0].protein_target) } : null,
     })
   }, [])

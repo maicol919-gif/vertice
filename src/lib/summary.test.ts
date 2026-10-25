@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sleepSummary, SLEEP_REF_MIN, addDays, dayScores, WEEKLY_TRAINING_REF, bodySummary, caffeineSummary, crossTrainingRest, lastDays, nutritionSummary, trainingSummary, type NutritionDay, type TrainingDay } from './summary'
+import { sleepSummary, wakeCounts, SLEEP_REF_MIN, addDays, dayScores, WEEKLY_TRAINING_REF, bodySummary, caffeineSummary, crossTrainingRest, lastDays, nutritionSummary, trainingSummary, type NutritionDay, type TrainingDay } from './summary'
 
 const nut = (date: string, kcal: number, protein: number, carbs = 200): NutritionDay => ({ date, kcal, protein, carbs, fat: 50 })
 const tr = (date: string, sessions_done: number, cardio_minutes = 0): TrainingDay => ({ date, sessions_done, cardio_minutes })
@@ -150,5 +150,13 @@ describe('sueño', () => {
     expect(s.avgMin).toBe(450)
     expect(s.avgNapMin).toBe(60)
     expect(s.avgQuality).toBe(4)
+  })
+})
+
+describe('wakeCounts', () => {
+  it('cuenta cómo terminó cada noche anotada', () => {
+    const row = (date: string, wake_reason: 'solo' | 'despertador' | 'ruido' | null) => ({ date, minutes: 420, night_minutes: 420, nap_minutes: 0, quality: null, wake_reason })
+    const w = wakeCounts(['2026-10-23', '2026-10-24', '2026-10-25'], [row('2026-10-23', 'despertador'), row('2026-10-24', null), row('2026-10-25', 'solo')])
+    expect(w).toEqual({ logged: 2, solo: 1, despertador: 1, ruido: 0 })
   })
 })

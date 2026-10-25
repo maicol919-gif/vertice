@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { toISODate } from '../lib/date'
-import { sleepSummary, bodySummary, caffeineSummary, crossTrainingRest, lastDays, nutritionSummary, trainingSummary, CROSS_MIN_DAYS } from '../lib/summary'
+import { sleepSummary, wakeCounts, bodySummary, caffeineSummary, crossTrainingRest, lastDays, nutritionSummary, trainingSummary, CROSS_MIN_DAYS } from '../lib/summary'
 import type { VerticeData } from '../lib/useVerticeData'
 
 const fmt = (n: number, d = 0) => n.toFixed(d).replace('.', ',')
@@ -18,6 +18,7 @@ export default function Resumen({ data }: { data: VerticeData }) {
   const body = useMemo(() => bodySummary(today, data.body), [today, data])
   const cross = useMemo(() => crossTrainingRest(days, data.nutrition, data.training), [days, data])
   const slp = useMemo(() => sleepSummary(days, data.sleep), [days, data])
+  const wake = useMemo(() => wakeCounts(days, data.sleep), [days, data])
   const caf = useMemo(() => caffeineSummary(days, data.caffeine), [days, data])
 
   return (
@@ -85,6 +86,7 @@ export default function Resumen({ data }: { data: VerticeData }) {
           <>
             <p>Media de <strong>{hoursText(slp.avgMin)}</strong> en 24 h ({slp.days} de {days.length} días registrados){slp.avgNapMin ? <> · siestas: {hoursText(slp.avgNapMin)} de media</> : null}</p>
             <p className="muted">{slp.avgMin < 7 * 60 ? 'Por debajo de las 7 h recomendadas para adultos.' : 'En el rango recomendado (7-9 h).'}{slp.avgQuality != null ? ` Descanso medio: ${fmt(slp.avgQuality, 1)}/5.` : ''}</p>
+            {wake.logged > 0 && <p className="muted">Despertar: {wake.solo} de {wake.logged} noches por tu cuenta, {wake.despertador} con despertador y {wake.ruido} por ruido.</p>}
           </>
         ) : (
           <p className="muted">Sin sueño registrado en este periodo. Se anota en Nutrición, en Mi día.</p>
